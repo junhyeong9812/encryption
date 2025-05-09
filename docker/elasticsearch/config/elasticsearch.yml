@@ -1,0 +1,41 @@
+# ======================== Elasticsearch Configuration =========================
+
+# 클러스터 설정
+cluster.name: encryption-es-cluster
+node.name: encryption-es-node
+
+# 네트워크 설정
+network.host: 0.0.0.0
+http.port: 9200
+transport.port: 9300
+discovery.type: single-node
+
+# 보안 설정 (개발 환경에서는 비활성화)
+xpack.security.enabled: false
+
+# 메모리 설정
+bootstrap.memory_lock: true
+
+# 인덱스 설정
+action.auto_create_index: .watches,.triggered_watches,.watcher-history-*,.ml-*,*
+
+# 데이터 경로
+path.data: /usr/share/elasticsearch/data
+path.logs: /usr/share/elasticsearch/logs
+
+# 한국어 분석기 기본 설정
+index:
+  analysis:
+    analyzer:
+      korean:
+        type: custom
+        tokenizer: nori_tokenizer
+        filter: [lowercase, nori_part_of_speech]
+    tokenizer:
+      nori_tokenizer:
+        type: nori_tokenizer
+        decompound_mode: mixed
+    filter:
+      nori_part_of_speech:
+        type: nori_part_of_speech
+        stoptags: ["E", "IC", "J", "MAG", "MAJ", "MM", "SP", "SSC", "SSO", "SC", "SE", "XPN", "XSA", "XSN", "XSV", "UNA", "NA", "VSV"]

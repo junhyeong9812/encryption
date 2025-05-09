@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: personal-data-encryption
+
+  # 데이터베이스 설정
+  datasource:
+    url: jdbc:postgresql://localhost:5432/encryption_db
+    username: postgres
+    password: postgrespassword
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 30000
+      pool-name: EncryptionHikariPool
+
+  # JPA 설정
+  jpa:
+    hibernate:
+      ddl-auto: create # 개발 환경에서는 update, 운영 환경에서는 validate 권장
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        show_sql: true
+        use_sql_comments: true
+        default_batch_fetch_size: 100
+    open-in-view: false
+
+  # ElasticSearch 설정
+  elasticsearch:
+    uris: http://localhost:9200
+    connection-timeout: 5s
+    socket-timeout: 30s
+
+# 암호화 설정
+encryption:
+  key: ${ENCRYPTION_MASTER_KEY:changeme_this_is_at_least_32_bytes_long}  # 실제 환경에서는 환경 변수로 제공
+  key-rotation-period-days: 90
+  algorithm: AES/GCM/NoPadding
+
+# 로깅 설정
+logging:
+  level:
+    root: INFO
+    com.personaldata.encryption: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.springframework.data.elasticsearch.client.WIRE: ERROR
+
+# 서버 설정
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+# 관리자 API 설정
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+# Swagger/OpenAPI 설정
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+  packages-to-scan: com.personaldata.encryption
