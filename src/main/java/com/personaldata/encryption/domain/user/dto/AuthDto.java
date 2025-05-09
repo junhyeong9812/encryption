@@ -48,6 +48,10 @@ public class AuthDto {
         @Pattern(regexp = "^(01[016789])-?(\\d{3,4})-?(\\d{4})$", message = "유효한 전화번호 형식이 아닙니다.")
         private String phone;
 
+        @Pattern(regexp = "^\\d{2}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])-?[1-4]\\d{6}$",
+                message = "유효한 주민등록번호 형식이 아닙니다.")
+        private String ssn;
+
         @NotBlank(message = "이메일은 필수 항목입니다.")
         @Email(message = "유효한 이메일 형식이 아닙니다.")
         private String email;

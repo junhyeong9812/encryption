@@ -74,6 +74,45 @@ public class UserSearchService {
     }
 
     /**
+     * 전화번호 뒷자리로 사용자 검색 (ElasticSearch 사용)
+     */
+    @Transactional(readOnly = true)
+    public List<UserDto> searchUsersByPhoneSuffix(String phoneSuffix, Pageable pageable) {
+        // 전화번호 뒷자리 결정적 암호화
+        String phoneSuffixSearchable = encryptionUtil.deterministicEncrypt(phoneSuffix);
+
+        Page<UserSearchDocument> searchResults = userSearchRepository.findByPhoneSuffix(phoneSuffixSearchable, pageable);
+
+        return convertToUserDtos(searchResults.getContent());
+    }
+
+    /**
+     * 주민등록번호 앞자리(생년월일)로 사용자 검색 (ElasticSearch 사용)
+     */
+    @Transactional(readOnly = true)
+    public List<UserDto> searchUsersBySsnPrefix(String ssnPrefix, Pageable pageable) {
+        // 주민등록번호 앞자리 결정적 암호화
+        String ssnPrefixSearchable = encryptionUtil.deterministicEncrypt(ssnPrefix);
+
+        Page<UserSearchDocument> searchResults = userSearchRepository.findBySsnPrefix(ssnPrefixSearchable, pageable);
+
+        return convertToUserDtos(searchResults.getContent());
+    }
+
+    /**
+     * 주민등록번호 성별자리로 사용자 검색 (ElasticSearch 사용)
+     */
+    @Transactional(readOnly = true)
+    public List<UserDto> searchUsersBySsnGenderDigit(String ssnGenderDigit, Pageable pageable) {
+        // 주민등록번호 성별자리 결정적 암호화
+        String ssnGenderDigitSearchable = encryptionUtil.deterministicEncrypt(ssnGenderDigit);
+
+        Page<UserSearchDocument> searchResults = userSearchRepository.findBySsnGenderDigit(ssnGenderDigitSearchable, pageable);
+
+        return convertToUserDtos(searchResults.getContent());
+    }
+
+    /**
      * 지역으로 사용자 검색 (ElasticSearch 사용)
      */
     @Transactional(readOnly = true)
@@ -97,7 +136,8 @@ public class UserSearchService {
      * 복합 조건으로 사용자 검색 (ElasticSearch 사용)
      */
     @Transactional(readOnly = true)
-    public List<UserDto> searchUsers(String name, String nameInitial, String phonePrefix,
+    public List<UserDto> searchUsers(String name, String nameInitial, String phonePrefix, String phoneSuffix,
+                                     String ssnPrefix, String ssnGenderDigit,
                                      String region, String city, Pageable pageable) {
         // 검색 기준 생성
         Criteria criteria = new Criteria();
@@ -117,6 +157,24 @@ public class UserSearchService {
         if (StringUtils.hasText(phonePrefix)) {
             String phonePrefixSearchable = encryptionUtil.deterministicEncrypt(phonePrefix);
             criteria = criteria.and(new Criteria("phonePrefix").is(phonePrefixSearchable));
+        }
+
+        // 전화번호 뒷자리가 있으면 결정적 암호화하여 검색 조건 추가
+        if (StringUtils.hasText(phoneSuffix)) {
+            String phoneSuffixSearchable = encryptionUtil.deterministicEncrypt(phoneSuffix);
+            criteria = criteria.and(new Criteria("phoneSuffix").is(phoneSuffixSearchable));
+        }
+
+        // 주민등록번호 앞자리가 있으면 결정적 암호화하여 검색 조건 추가
+        if (StringUtils.hasText(ssnPrefix)) {
+            String ssnPrefixSearchable = encryptionUtil.deterministicEncrypt(ssnPrefix);
+            criteria = criteria.and(new Criteria("ssnPrefix").is(ssnPrefixSearchable));
+        }
+
+        // 주민등록번호 성별자리가 있으면 결정적 암호화하여 검색 조건 추가
+        if (StringUtils.hasText(ssnGenderDigit)) {
+            String ssnGenderDigitSearchable = encryptionUtil.deterministicEncrypt(ssnGenderDigit);
+            criteria = criteria.and(new Criteria("ssnGenderDigit").is(ssnGenderDigitSearchable));
         }
 
         // 지역이 있으면 검색 조건 추가
@@ -141,6 +199,37 @@ public class UserSearchService {
     }
 
     /**
+     * 전화번호 뒷자리와 이름으로 사용자 검색 (ElasticSearch 사용)
+     * - 흔히 고객센터에서 많이 사용하는 검색 방식
+     */
+    @Transactional(readOnly = true)
+    public List<UserDto> searchUsersByPhoneSuffixAndName(String phoneSuffix, String name, Pageable pageable) {
+        // 결정적 암호화하여 검색
+        String phoneSuffixSearchable = encryptionUtil.deterministicEncrypt(phoneSuffix);
+        String nameSearchable = encryptionUtil.deterministicEncrypt(name);
+
+        Page<UserSearchDocument> searchResults = userSearchRepository.findByPhoneSuffixAndNameSearchable(
+                phoneSuffixSearchable, nameSearchable, pageable);
+
+        return convertToUserDtos(searchResults.getContent());
+    }
+
+    /**
+     * 주민등록번호 앞자리(생년월일)와 성별자리로 사용자 검색 (ElasticSearch 사용)
+     */
+    @Transactional(readOnly = true)
+    public List<UserDto> searchUsersBySsnPrefixAndGenderDigit(String ssnPrefix, String ssnGenderDigit, Pageable pageable) {
+        // 결정적 암호화하여 검색
+        String ssnPrefixSearchable = encryptionUtil.deterministicEncrypt(ssnPrefix);
+        String ssnGenderDigitSearchable = encryptionUtil.deterministicEncrypt(ssnGenderDigit);
+
+        Page<UserSearchDocument> searchResults = userSearchRepository.findBySsnPrefixAndSsnGenderDigit(
+                ssnPrefixSearchable, ssnGenderDigitSearchable, pageable);
+
+        return convertToUserDtos(searchResults.getContent());
+    }
+
+    /**
      * 검색 결과를 UserDto로 변환
      */
     private List<UserDto> convertToUserDtos(List<UserSearchDocument> searchResults) {
@@ -155,8 +244,15 @@ public class UserSearchService {
                             // 민감 정보 복호화
                             String decryptedName = encryptionUtil.decrypt(user.getNameEncrypted());
                             String decryptedPhone = encryptionUtil.decrypt(user.getPhoneEncrypted());
+                            String decryptedSsn = null;
 
-                            return UserDto.fromEntity(user, decryptedName, decryptedPhone);
+                            // 주민등록번호가 있는 경우에만 복호화
+                            if (user.getSsnEncrypted() != null) {
+                                decryptedSsn = encryptionUtil.decrypt(user.getSsnEncrypted());
+                                return UserDto.fromEntity(user, decryptedName, decryptedPhone, decryptedSsn);
+                            } else {
+                                return UserDto.fromEntity(user, decryptedName, decryptedPhone);
+                            }
                         }
                     } catch (Exception e) {
                         log.error("사용자 정보 변환 실패: ID={}, 원인={}", doc.getId(), e.getMessage(), e);

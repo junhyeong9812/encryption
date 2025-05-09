@@ -32,6 +32,21 @@ public interface UserSearchRepository extends ElasticsearchRepository<UserSearch
     Page<UserSearchDocument> findByPhonePrefix(String phonePrefix, Pageable pageable);
 
     /**
+     * 전화번호 뒷자리로 사용자 검색
+     */
+    Page<UserSearchDocument> findByPhoneSuffix(String phoneSuffix, Pageable pageable);
+
+    /**
+     * 주민등록번호 앞자리(생년월일)로 사용자 검색
+     */
+    Page<UserSearchDocument> findBySsnPrefix(String ssnPrefix, Pageable pageable);
+
+    /**
+     * 주민등록번호 성별자리로 사용자 검색
+     */
+    Page<UserSearchDocument> findBySsnGenderDigit(String ssnGenderDigit, Pageable pageable);
+
+    /**
      * 이메일 도메인으로 사용자 검색
      */
     Page<UserSearchDocument> findByEmailDomain(String emailDomain, Pageable pageable);
@@ -67,6 +82,16 @@ public interface UserSearchRepository extends ElasticsearchRepository<UserSearch
     Page<UserSearchDocument> findByNameSearchableAndRegion(String nameSearchable, String region, Pageable pageable);
 
     /**
+     * 복합 조건 검색 (전화번호 뒷자리 + 이름)
+     */
+    Page<UserSearchDocument> findByPhoneSuffixAndNameSearchable(String phoneSuffix, String nameSearchable, Pageable pageable);
+
+    /**
+     * 복합 조건 검색 (주민번호 앞자리 + 성별자리)
+     */
+    Page<UserSearchDocument> findBySsnPrefixAndSsnGenderDigit(String ssnPrefix, String ssnGenderDigit, Pageable pageable);
+
+    /**
      * 상세 검색을 위한 쿼리 DSL 사용
      */
     @Query("{\"bool\": {\"must\": [{\"term\": {\"nameSearchable\": \"?0\"}}, {\"term\": {\"regionCode\": \"?1\"}}]}}")
@@ -78,5 +103,7 @@ public interface UserSearchRepository extends ElasticsearchRepository<UserSearch
     List<UserSearchDocument> findByNameSearchable(String nameSearchable);
     List<UserSearchDocument> findByNameInitialContaining(String nameInitial);
     List<UserSearchDocument> findByPhonePrefix(String phonePrefix);
+    List<UserSearchDocument> findByPhoneSuffix(String phoneSuffix);
+    List<UserSearchDocument> findBySsnPrefix(String ssnPrefix);
     List<UserSearchDocument> findByRegion(String region);
 }

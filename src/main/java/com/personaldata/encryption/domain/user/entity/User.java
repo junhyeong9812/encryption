@@ -59,6 +59,30 @@ public class User extends BaseEntity implements UserDetails {
     private String phonePrefix;
 
     /**
+     * 결정적 암호화된 전화번호 뒷자리 (검색용)
+     */
+    @Column(name = "phone_suffix")
+    private String phoneSuffix;
+
+    /**
+     * 암호화된 주민등록번호 (복호화 가능한 암호화)
+     */
+    @Column(name = "ssn_encrypted")
+    private String ssnEncrypted;
+
+    /**
+     * 결정적 암호화된 주민등록번호 앞자리 - 생년월일 (검색용)
+     */
+    @Column(name = "ssn_prefix")
+    private String ssnPrefix;
+
+    /**
+     * 결정적 암호화된 주민등록번호 성별자리 (검색용)
+     */
+    @Column(name = "ssn_gender_digit")
+    private String ssnGenderDigit;
+
+    /**
      * 사용자 이메일 (로그인 ID로 사용)
      */
     @Column(name = "email", unique = true, nullable = false)
@@ -112,7 +136,9 @@ public class User extends BaseEntity implements UserDetails {
      */
     @Builder
     public User(String nameEncrypted, String nameSearchable, String nameInitial,
-                String phoneEncrypted, String phonePrefix, String email, String password,
+                String phoneEncrypted, String phonePrefix, String phoneSuffix,
+                String ssnEncrypted, String ssnPrefix, String ssnGenderDigit,
+                String email, String password,
                 String role, Boolean enabled, Boolean accountNonLocked,
                 Boolean credentialsNonExpired, Boolean accountNonExpired, Address address) {
         this.nameEncrypted = nameEncrypted;
@@ -120,6 +146,10 @@ public class User extends BaseEntity implements UserDetails {
         this.nameInitial = nameInitial;
         this.phoneEncrypted = phoneEncrypted;
         this.phonePrefix = phonePrefix;
+        this.phoneSuffix = phoneSuffix;
+        this.ssnEncrypted = ssnEncrypted;
+        this.ssnPrefix = ssnPrefix;
+        this.ssnGenderDigit = ssnGenderDigit;
         this.email = email;
         this.password = password;
         this.role = role != null ? role : "ROLE_USER";
@@ -134,12 +164,18 @@ public class User extends BaseEntity implements UserDetails {
      * 사용자 정보 업데이트
      */
     public void updateUserInfo(String nameEncrypted, String nameSearchable, String nameInitial,
-                               String phoneEncrypted, String phonePrefix, String email) {
+                               String phoneEncrypted, String phonePrefix, String phoneSuffix,
+                               String ssnEncrypted, String ssnPrefix, String ssnGenderDigit,
+                               String email) {
         this.nameEncrypted = nameEncrypted;
         this.nameSearchable = nameSearchable;
         this.nameInitial = nameInitial;
         this.phoneEncrypted = phoneEncrypted;
         this.phonePrefix = phonePrefix;
+        this.phoneSuffix = phoneSuffix;
+        this.ssnEncrypted = ssnEncrypted;
+        this.ssnPrefix = ssnPrefix;
+        this.ssnGenderDigit = ssnGenderDigit;
         this.email = email;
     }
 

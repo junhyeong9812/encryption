@@ -42,9 +42,39 @@ public class AuthService {
         // 전화번호 암호화
         String phoneEncrypted = encryptionUtil.encryptStrongly(request.getPhone());
         String phonePrefix = "";
-        if (request.getPhone() != null && request.getPhone().length() >= 3) {
+        String phoneSuffix = "";
+        if (request.getPhone() != null) {
             // 전화번호 앞 3자리를 결정적 암호화하여 검색에 활용
-            phonePrefix = encryptionUtil.deterministicEncrypt(request.getPhone().substring(0, 3));
+            if (request.getPhone().length() >= 3) {
+                phonePrefix = encryptionUtil.deterministicEncrypt(request.getPhone().substring(0, 3));
+            }
+
+            // 전화번호 뒤 4자리를 결정적 암호화하여 검색에 활용
+            if (request.getPhone().length() >= 4) {
+                int phoneLength = request.getPhone().length();
+                phoneSuffix = encryptionUtil.deterministicEncrypt(
+                        request.getPhone().substring(phoneLength - 4));
+            }
+        }
+
+        // 주민등록번호 암호화 (있는 경우)
+        String ssnEncrypted = null;
+        String ssnPrefix = null;
+        String ssnGenderDigit = null;
+
+        if (request.getSsn() != null && !request.getSsn().isEmpty()) {
+            ssnEncrypted = encryptionUtil.encryptStrongly(request.getSsn());
+
+            // 주민등록번호 앞 6자리(생년월일)를 결정적 암호화하여 검색에 활용
+            if (request.getSsn().length() >= 6) {
+                ssnPrefix = encryptionUtil.deterministicEncrypt(request.getSsn().substring(0, 6));
+            }
+
+            // 주민등록번호 성별자리를 결정적 암호화하여 검색에 활용
+            String genderDigit = encryptionUtil.extractSsnGenderDigit(request.getSsn());
+            if (!genderDigit.isEmpty()) {
+                ssnGenderDigit = encryptionUtil.deterministicEncrypt(genderDigit);
+            }
         }
 
         // 비밀번호 암호화
@@ -75,6 +105,10 @@ public class AuthService {
                 .nameInitial(nameInitial)
                 .phoneEncrypted(phoneEncrypted)
                 .phonePrefix(phonePrefix)
+                .phoneSuffix(phoneSuffix)
+                .ssnEncrypted(ssnEncrypted)
+                .ssnPrefix(ssnPrefix)
+                .ssnGenderDigit(ssnGenderDigit)
                 .email(request.getEmail())
                 .password(encodedPassword)
                 .role("ROLE_USER")

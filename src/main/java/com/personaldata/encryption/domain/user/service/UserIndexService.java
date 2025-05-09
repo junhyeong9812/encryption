@@ -6,7 +6,6 @@ import com.personaldata.encryption.domain.user.repository.UserRepository;
 import com.personaldata.encryption.domain.user.repository.UserSearchRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -42,6 +41,9 @@ public class UserIndexService {
                     .nameSearchable(user.getNameSearchable())
                     .nameInitial(user.getNameInitial())
                     .phonePrefix(user.getPhonePrefix())
+                    .phoneSuffix(user.getPhoneSuffix())
+                    .ssnPrefix(user.getSsnPrefix())
+                    .ssnGenderDigit(user.getSsnGenderDigit())
                     .emailDomain(emailDomain)
                     .build();
 

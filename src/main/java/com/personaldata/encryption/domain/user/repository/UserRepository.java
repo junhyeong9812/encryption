@@ -31,6 +31,21 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByPhonePrefix(String phonePrefix);
 
     /**
+     * 결정적 암호화된 전화번호 뒷자리로 사용자 찾기
+     */
+    List<User> findByPhoneSuffix(String phoneSuffix);
+
+    /**
+     * 결정적 암호화된 주민번호 앞자리(생년월일)로 사용자 찾기
+     */
+    List<User> findBySsnPrefix(String ssnPrefix);
+
+    /**
+     * 결정적 암호화된 주민번호 성별자리로 사용자 찾기
+     */
+    List<User> findBySsnGenderDigit(String ssnGenderDigit);
+
+    /**
      * 이메일로 사용자 찾기
      */
     Optional<User> findByEmail(String email);
@@ -58,4 +73,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     @Query("SELECT u FROM User u JOIN u.address a WHERE a.cityCode = :cityCode")
     List<User> findByCityCode(@Param("cityCode") String cityCode);
+
+    /**
+     * 전화번호 뒷자리와 이름으로 사용자 찾기
+     */
+    List<User> findByPhoneSuffixAndNameSearchable(String phoneSuffix, String nameSearchable);
+
+    /**
+     * 주민번호 앞자리와 성별자리로 사용자 찾기
+     */
+    List<User> findBySsnPrefixAndSsnGenderDigit(String ssnPrefix, String ssnGenderDigit);
 }

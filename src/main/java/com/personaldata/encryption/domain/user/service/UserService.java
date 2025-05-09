@@ -36,6 +36,12 @@ public class UserService {
         // 민감 정보 복호화
         String decryptedName = encryptionUtil.decrypt(user.getNameEncrypted());
         String decryptedPhone = encryptionUtil.decrypt(user.getPhoneEncrypted());
+        String decryptedSsn = null;
+
+        // 주민등록번호가 있는 경우에만 복호화
+        if (user.getSsnEncrypted() != null) {
+            decryptedSsn = encryptionUtil.decrypt(user.getSsnEncrypted());
+        }
 
         // 주소 정보가 있는 경우 상세 주소 복호화
         AddressDto addressDto = null;
@@ -45,7 +51,9 @@ public class UserService {
         }
 
         // DTO 생성 및 주소 정보 설정
-        UserDto userDto = UserDto.fromEntity(user, decryptedName, decryptedPhone);
+        UserDto userDto = decryptedSsn != null
+                ? UserDto.fromEntity(user, decryptedName, decryptedPhone, decryptedSsn)
+                : UserDto.fromEntity(user, decryptedName, decryptedPhone);
         userDto.setAddress(addressDto);
 
         return userDto;
@@ -62,6 +70,12 @@ public class UserService {
         // 민감 정보 복호화
         String decryptedName = encryptionUtil.decrypt(user.getNameEncrypted());
         String decryptedPhone = encryptionUtil.decrypt(user.getPhoneEncrypted());
+        String decryptedSsn = null;
+
+        // 주민등록번호가 있는 경우에만 복호화
+        if (user.getSsnEncrypted() != null) {
+            decryptedSsn = encryptionUtil.decrypt(user.getSsnEncrypted());
+        }
 
         // 주소 정보가 있는 경우 상세 주소 복호화
         AddressDto addressDto = null;
@@ -71,7 +85,9 @@ public class UserService {
         }
 
         // DTO 생성 및 주소 정보 설정
-        UserDto userDto = UserDto.fromEntity(user, decryptedName, decryptedPhone);
+        UserDto userDto = decryptedSsn != null
+                ? UserDto.fromEntity(user, decryptedName, decryptedPhone, decryptedSsn)
+                : UserDto.fromEntity(user, decryptedName, decryptedPhone);
         userDto.setAddress(addressDto);
 
         return userDto;
@@ -81,7 +97,7 @@ public class UserService {
      * 사용자 정보 업데이트
      */
     @Transactional
-    public UserDto updateUser(Long id, String name, String phone, String email, AddressDto addressDto) {
+    public UserDto updateUser(Long id, String name, String phone, String ssn, String email, AddressDto addressDto) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("ID가 " + id + "인 사용자를 찾을 수 없습니다."));
 
@@ -93,13 +109,46 @@ public class UserService {
         // 전화번호 암호화
         String phoneEncrypted = encryptionUtil.encryptStrongly(phone);
         String phonePrefix = "";
-        if (phone != null && phone.length() >= 3) {
+        String phoneSuffix = "";
+
+        if (phone != null) {
             // 전화번호 앞 3자리를 결정적 암호화하여 검색에 활용
-            phonePrefix = encryptionUtil.deterministicEncrypt(phone.substring(0, 3));
+            if (phone.length() >= 3) {
+                phonePrefix = encryptionUtil.deterministicEncrypt(phone.substring(0, 3));
+            }
+
+            // 전화번호 뒤 4자리를 결정적 암호화하여 검색에 활용
+            if (phone.length() >= 4) {
+                int phoneLength = phone.length();
+                phoneSuffix = encryptionUtil.deterministicEncrypt(
+                        phone.substring(phoneLength - 4));
+            }
+        }
+
+        // 주민등록번호 암호화 (있는 경우)
+        String ssnEncrypted = null;
+        String ssnPrefix = null;
+        String ssnGenderDigit = null;
+
+        if (ssn != null && !ssn.isEmpty()) {
+            ssnEncrypted = encryptionUtil.encryptStrongly(ssn);
+
+            // 주민등록번호 앞 6자리(생년월일)를 결정적 암호화하여 검색에 활용
+            if (ssn.length() >= 6) {
+                ssnPrefix = encryptionUtil.deterministicEncrypt(ssn.substring(0, 6));
+            }
+
+            // 주민등록번호 성별자리를 결정적 암호화하여 검색에 활용
+            String genderDigit = encryptionUtil.extractSsnGenderDigit(ssn);
+            if (!genderDigit.isEmpty()) {
+                ssnGenderDigit = encryptionUtil.deterministicEncrypt(genderDigit);
+            }
         }
 
         // 사용자 정보 업데이트
-        user.updateUserInfo(nameEncrypted, nameSearchable, nameInitial, phoneEncrypted, phonePrefix, email);
+        user.updateUserInfo(nameEncrypted, nameSearchable, nameInitial,
+                phoneEncrypted, phonePrefix, phoneSuffix,
+                ssnEncrypted, ssnPrefix, ssnGenderDigit, email);
 
         // 주소 정보 업데이트
         if (addressDto != null) {
@@ -140,7 +189,9 @@ public class UserService {
         userIndexService.indexUser(updatedUser);
 
         // DTO 반환
-        return UserDto.fromEntity(updatedUser, name, phone);
+        return ssn != null
+                ? UserDto.fromEntity(updatedUser, name, phone, ssn)
+                : UserDto.fromEntity(updatedUser, name, phone);
     }
 
     /**
@@ -170,13 +221,21 @@ public class UserService {
                 .map(user -> {
                     String decryptedName = encryptionUtil.decrypt(user.getNameEncrypted());
                     String decryptedPhone = encryptionUtil.decrypt(user.getPhoneEncrypted());
-                    return UserDto.fromEntity(user, decryptedName, decryptedPhone);
+                    String decryptedSsn = null;
+
+                    if (user.getSsnEncrypted() != null) {
+                        decryptedSsn = encryptionUtil.decrypt(user.getSsnEncrypted());
+                    }
+
+                    return decryptedSsn != null
+                            ? UserDto.fromEntity(user, decryptedName, decryptedPhone, decryptedSsn)
+                            : UserDto.fromEntity(user, decryptedName, decryptedPhone);
                 })
                 .collect(Collectors.toList());
     }
 
     /**
-     * 전화번호로 사용자 검색 (JPA 사용)
+     * 전화번호 앞자리로 사용자 검색 (JPA 사용)
      */
     @Transactional(readOnly = true)
     public List<UserDto> searchUsersByPhonePrefix(String phonePrefix) {
@@ -187,7 +246,65 @@ public class UserService {
                 .map(user -> {
                     String decryptedName = encryptionUtil.decrypt(user.getNameEncrypted());
                     String decryptedPhone = encryptionUtil.decrypt(user.getPhoneEncrypted());
-                    return UserDto.fromEntity(user, decryptedName, decryptedPhone);
+                    String decryptedSsn = null;
+
+                    if (user.getSsnEncrypted() != null) {
+                        decryptedSsn = encryptionUtil.decrypt(user.getSsnEncrypted());
+                    }
+
+                    return decryptedSsn != null
+                            ? UserDto.fromEntity(user, decryptedName, decryptedPhone, decryptedSsn)
+                            : UserDto.fromEntity(user, decryptedName, decryptedPhone);
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 전화번호 뒷자리로 사용자 검색 (JPA 사용)
+     */
+    @Transactional(readOnly = true)
+    public List<UserDto> searchUsersByPhoneSuffix(String phoneSuffix) {
+        String phoneSuffixSearchable = encryptionUtil.deterministicEncrypt(phoneSuffix);
+        List<User> users = userRepository.findByPhoneSuffix(phoneSuffixSearchable);
+
+        return users.stream()
+                .map(user -> {
+                    String decryptedName = encryptionUtil.decrypt(user.getNameEncrypted());
+                    String decryptedPhone = encryptionUtil.decrypt(user.getPhoneEncrypted());
+                    String decryptedSsn = null;
+
+                    if (user.getSsnEncrypted() != null) {
+                        decryptedSsn = encryptionUtil.decrypt(user.getSsnEncrypted());
+                    }
+
+                    return decryptedSsn != null
+                            ? UserDto.fromEntity(user, decryptedName, decryptedPhone, decryptedSsn)
+                            : UserDto.fromEntity(user, decryptedName, decryptedPhone);
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 주민등록번호 앞자리로 사용자 검색 (JPA 사용)
+     */
+    @Transactional(readOnly = true)
+    public List<UserDto> searchUsersBySsnPrefix(String ssnPrefix) {
+        String ssnPrefixSearchable = encryptionUtil.deterministicEncrypt(ssnPrefix);
+        List<User> users = userRepository.findBySsnPrefix(ssnPrefixSearchable);
+
+        return users.stream()
+                .map(user -> {
+                    String decryptedName = encryptionUtil.decrypt(user.getNameEncrypted());
+                    String decryptedPhone = encryptionUtil.decrypt(user.getPhoneEncrypted());
+                    String decryptedSsn = null;
+
+                    if (user.getSsnEncrypted() != null) {
+                        decryptedSsn = encryptionUtil.decrypt(user.getSsnEncrypted());
+                    }
+
+                    return decryptedSsn != null
+                            ? UserDto.fromEntity(user, decryptedName, decryptedPhone, decryptedSsn)
+                            : UserDto.fromEntity(user, decryptedName, decryptedPhone);
                 })
                 .collect(Collectors.toList());
     }
@@ -203,7 +320,15 @@ public class UserService {
                 .map(user -> {
                     String decryptedName = encryptionUtil.decrypt(user.getNameEncrypted());
                     String decryptedPhone = encryptionUtil.decrypt(user.getPhoneEncrypted());
-                    return UserDto.fromEntity(user, decryptedName, decryptedPhone);
+                    String decryptedSsn = null;
+
+                    if (user.getSsnEncrypted() != null) {
+                        decryptedSsn = encryptionUtil.decrypt(user.getSsnEncrypted());
+                    }
+
+                    return decryptedSsn != null
+                            ? UserDto.fromEntity(user, decryptedName, decryptedPhone, decryptedSsn)
+                            : UserDto.fromEntity(user, decryptedName, decryptedPhone);
                 })
                 .collect(Collectors.toList());
     }
@@ -219,7 +344,43 @@ public class UserService {
                 .map(user -> {
                     String decryptedName = encryptionUtil.decrypt(user.getNameEncrypted());
                     String decryptedPhone = encryptionUtil.decrypt(user.getPhoneEncrypted());
-                    return UserDto.fromEntity(user, decryptedName, decryptedPhone);
+                    String decryptedSsn = null;
+
+                    if (user.getSsnEncrypted() != null) {
+                        decryptedSsn = encryptionUtil.decrypt(user.getSsnEncrypted());
+                    }
+
+                    return decryptedSsn != null
+                            ? UserDto.fromEntity(user, decryptedName, decryptedPhone, decryptedSsn)
+                            : UserDto.fromEntity(user, decryptedName, decryptedPhone);
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 전화번호 뒷자리와 이름으로 사용자 검색 (JPA 사용)
+     * - 고객센터에서 많이 사용하는 검색 방식
+     */
+    @Transactional(readOnly = true)
+    public List<UserDto> searchUsersByPhoneSuffixAndName(String phoneSuffix, String name) {
+        String phoneSuffixSearchable = encryptionUtil.deterministicEncrypt(phoneSuffix);
+        String nameSearchable = encryptionUtil.deterministicEncrypt(name);
+
+        List<User> users = userRepository.findByPhoneSuffixAndNameSearchable(phoneSuffixSearchable, nameSearchable);
+
+        return users.stream()
+                .map(user -> {
+                    String decryptedName = encryptionUtil.decrypt(user.getNameEncrypted());
+                    String decryptedPhone = encryptionUtil.decrypt(user.getPhoneEncrypted());
+                    String decryptedSsn = null;
+
+                    if (user.getSsnEncrypted() != null) {
+                        decryptedSsn = encryptionUtil.decrypt(user.getSsnEncrypted());
+                    }
+
+                    return decryptedSsn != null
+                            ? UserDto.fromEntity(user, decryptedName, decryptedPhone, decryptedSsn)
+                            : UserDto.fromEntity(user, decryptedName, decryptedPhone);
                 })
                 .collect(Collectors.toList());
     }

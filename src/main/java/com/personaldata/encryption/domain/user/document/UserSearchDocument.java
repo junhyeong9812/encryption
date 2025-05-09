@@ -47,6 +47,24 @@ public class UserSearchDocument {
     private String phonePrefix;
 
     /**
+     * 결정적 암호화된 전화번호 뒷자리 (검색용)
+     */
+    @Field(type = FieldType.Keyword)
+    private String phoneSuffix;
+
+    /**
+     * 결정적 암호화된 주민등록번호 앞자리 - 생년월일 (검색용)
+     */
+    @Field(type = FieldType.Keyword)
+    private String ssnPrefix;
+
+    /**
+     * 결정적 암호화된 주민등록번호 성별자리 (검색용)
+     */
+    @Field(type = FieldType.Keyword)
+    private String ssnGenderDigit;
+
+    /**
      * 이메일 도메인 (검색용)
      */
     @Field(type = FieldType.Keyword)

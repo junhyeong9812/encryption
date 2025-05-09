@@ -211,7 +211,57 @@ public class EncryptionUtil {
             int length = phoneNumber.length();
             String prefix = phoneNumber.substring(0, 3);
             String suffix = phoneNumber.substring(length - 4);
-            return prefix + "****" + suffix;
+            return prefix + "-****-" + suffix;
+        }
+    }
+
+    /**
+     * 주민등록번호 마스킹 처리
+     *
+     * @param ssn 주민등록번호
+     * @return 마스킹된 주민등록번호 (예: 123456-*******)
+     */
+    public String maskSsn(String ssn) {
+        if (ssn == null || ssn.length() < 13) {
+            return "******-*******";
+        }
+
+        // 주민등록번호 형식에 따라 마스킹 처리
+        String[] parts = ssn.split("-");
+        if (parts.length == 2) {
+            // xxxxxx-xxxxxxx 형식
+            return parts[0] + "-*******";
+        } else {
+            // 그 외 형식일 경우
+            if (ssn.length() == 13) {
+                return ssn.substring(0, 6) + "-*******";
+            } else {
+                return "******-*******"; // 알 수 없는 형식이면 전체 마스킹
+            }
+        }
+    }
+
+    /**
+     * 주민등록번호에서 성별자리 추출
+     *
+     * @param ssn 주민등록번호
+     * @return 성별자리 (7번째 자리)
+     */
+    public String extractSsnGenderDigit(String ssn) {
+        if (ssn == null || ssn.length() < 8) {
+            return "";
+        }
+
+        // 주민등록번호 형식에 따라 성별자리 추출
+        String[] parts = ssn.split("-");
+        if (parts.length == 2 && parts[1].length() > 0) {
+            return parts[1].substring(0, 1);
+        } else {
+            // 하이픈이 없는 경우
+            if (ssn.length() >= 7) {
+                return ssn.substring(6, 7);
+            }
+            return "";
         }
     }
 }
