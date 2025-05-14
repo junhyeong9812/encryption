@@ -2,6 +2,7 @@ package com.personaldata.encryption.domain.user.controller;
 
 import com.personaldata.encryption.domain.user.dto.AddressDto;
 import com.personaldata.encryption.domain.user.dto.UserDto;
+import com.personaldata.encryption.domain.user.dto.UserUpdateRequestDto;
 import com.personaldata.encryption.domain.user.service.UserSearchService;
 import com.personaldata.encryption.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -77,7 +78,7 @@ public class UserController {
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<UserDto> updateUser(
             @Parameter(description = "사용자 ID", required = true) @PathVariable Long id,
-            @RequestBody @Valid UserUpdateRequest request) {
+            @RequestBody @Valid UserUpdateRequestDto request) {
 
         // 본인 정보 또는 관리자만 수정 가능하도록 검증
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -90,10 +91,13 @@ public class UserController {
             return ResponseEntity.status(403).build(); // 접근 권한 없음
         }
 
+        // 수정된 부분: UserService.updateUser 메서드와 매개변수 맞추기
+        // ssn 값은 null로 전달 (요청에 ssn 필드가 없음)
         UserDto updatedUser = userService.updateUser(
                 id,
                 request.getName(),
                 request.getPhone(),
+                null, // ssn은 null로 전달
                 request.getEmail(),
                 request.getAddress()
         );
@@ -198,28 +202,22 @@ public class UserController {
             @RequestParam(defaultValue = "10") int size) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        List<UserDto> users = userSearchService.searchUsers(name, initial, phonePrefix, region, city, pageable);
+
+        // 수정된 부분: UserSearchService.searchUsers 메서드와 매개변수 맞추기
+        // 누락된 매개변수(phoneSuffix, ssnPrefix, ssnGenderDigit)는 null로 전달
+        List<UserDto> users = userSearchService.searchUsers(
+                name,
+                initial,
+                phonePrefix,
+                null, // phoneSuffix 누락되었으므로 null 전달
+                null, // ssnPrefix 누락되었으므로 null 전달
+                null, // ssnGenderDigit 누락되었으므로 null 전달
+                region,
+                city,
+                pageable
+        );
 
         return ResponseEntity.ok(users);
     }
 
-    /**
-     * 사용자 정보 수정 요청 DTO
-     */
-    public static class UserUpdateRequest {
-        private String name;
-        private String phone;
-        private String email;
-        private AddressDto address;
-
-        // Getter/Setter 생략
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public String getPhone() { return phone; }
-        public void setPhone(String phone) { this.phone = phone; }
-        public String getEmail() { return email; }
-        public void setEmail(String email) { this.email = email; }
-        public AddressDto getAddress() { return address; }
-        public void setAddress(AddressDto address) { this.address = address; }
-    }
 }

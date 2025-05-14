@@ -35,7 +35,7 @@ spring:
 
 # 암호화 설정
 encryption:
-  key: ${ENCRYPTION_MASTER_KEY:changeme_this_is_at_least_32_bytes_long}  # 실제 환경에서는 환경 변수로 제공
+  key: ${ENCRYPTION_MASTER_KEY:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=} # 실제 환경에서는 환경 변수로 제공
   key-rotation-period-days: 90
   algorithm: AES/GCM/NoPadding
 
@@ -50,8 +50,8 @@ logging:
 # 서버 설정
 server:
   port: 8080
-  servlet:
-    context-path: /api
+#  servlet:
+#    context-path: /
 
 # 관리자 API 설정
 management:
