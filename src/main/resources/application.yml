@@ -17,7 +17,7 @@ spring:
   # JPA 설정
   jpa:
     hibernate:
-      ddl-auto: create # 개발 환경에서는 update, 운영 환경에서는 validate 권장
+      ddl-auto: update # 개발 환경에서는 update, 운영 환경에서는 validate 권장
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -32,6 +32,33 @@ spring:
     uris: http://localhost:9200
     connection-timeout: 5s
     socket-timeout: 30s
+
+# JWT 설정
+jwt:
+  # 서명에 사용할 비밀키 (실제 환경에서는 환경 변수로 제공)
+  secret: ${JWT_SECRET:QXV0aGVudGljYXRpb25TZWNyZXRLZXlGb3JKV1RUb2tlbkdlbmVyYXRpb25BbmRWYWxpZGF0aW9u}
+
+  # 액세스 토큰 만료 시간 (밀리초): 30분
+  access-token-expiration: 1800000
+
+  # 리프레시 토큰 만료 시간 (밀리초): 14일
+  refresh-token-expiration: 1209600000
+
+  # 토큰 발행자
+  issuer: personal-data-encryption-system
+
+  # 쿠키 설정
+  cookie:
+    # 쿠키 도메인 (운영 환경에서는 실제 도메인으로 변경)
+    domain: localhost
+
+    # 보안 쿠키 설정 (HTTPS에서만 전송, 개발 환경에서는 false로 설정 가능)
+    secure: false
+
+    # 토큰 소스 우선순위 (cookie-first 또는 header-first)
+    # cookie-first: 쿠키에서 먼저 토큰을 찾고, 없으면 헤더에서 찾음
+    # header-first: 헤더에서 먼저 토큰을 찾고, 없으면 쿠키에서 찾음
+    token-source-priority: cookie-first
 
 # 암호화 설정
 encryption:

@@ -1,5 +1,6 @@
 package com.personaldata.encryption.domain.user.entity;
 
+import com.personaldata.encryption.domain.user.entity.enums.UserRole;
 import com.personaldata.encryption.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -95,7 +96,7 @@ public class User extends BaseEntity implements UserDetails {
     private String password;
 
     /**
-     * 사용자 권한
+     * 사용자 역할
      */
     @Column(name = "role", nullable = false)
     private String role;
@@ -152,7 +153,7 @@ public class User extends BaseEntity implements UserDetails {
         this.ssnGenderDigit = ssnGenderDigit;
         this.email = email;
         this.password = password;
-        this.role = role != null ? role : "ROLE_USER";
+        this.role = role != null ? role : UserRole.USER.getKey();
         this.enabled = enabled != null ? enabled : true;
         this.accountNonLocked = accountNonLocked != null ? accountNonLocked : true;
         this.credentialsNonExpired = credentialsNonExpired != null ? credentialsNonExpired : true;
@@ -205,10 +206,19 @@ public class User extends BaseEntity implements UserDetails {
     }
 
     /**
-     * 권한 업데이트
+     * 역할 업데이트
      */
-    public void updateRole(String role) {
-        this.role = role;
+    public void updateRole(UserRole userRole) {
+        this.role = userRole.getKey();
+    }
+
+    /**
+     * 사용자 역할 열거형 가져오기
+     *
+     * @return 사용자 역할 열거형
+     */
+    public UserRole getUserRole() {
+        return UserRole.fromKey(this.role);
     }
 
     // UserDetails 인터페이스 구현
