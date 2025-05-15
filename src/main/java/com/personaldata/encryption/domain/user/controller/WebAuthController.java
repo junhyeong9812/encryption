@@ -32,7 +32,7 @@ import java.util.Optional;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/auth/web")
+@RequestMapping("/auth/web")
 @RequiredArgsConstructor
 @Tag(name = "웹 인증 API", description = "웹 클라이언트용 인증 API (쿠키 기반)")
 public class WebAuthController {

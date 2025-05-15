@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/auth/mobile")
+@RequestMapping("/auth/mobile")
 @RequiredArgsConstructor
 @Tag(name = "모바일 인증 API", description = "모바일 클라이언트용 인증 API (토큰 응답 기반)")
 public class MobileAuthController {
