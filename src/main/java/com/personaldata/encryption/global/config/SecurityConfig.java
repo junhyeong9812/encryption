@@ -70,6 +70,7 @@ public class SecurityConfig {
                         // 공개 API 경로
                         .requestMatchers("/api/auth/web/login", "/api/auth/web/signup").permitAll()
                         .requestMatchers("/api/auth/web/refresh").permitAll()
+                        .requestMatchers("/api/auth/web/status").permitAll()
 
                         // 관리자 전용 API
                         .requestMatchers("/api/web/admin/**").hasRole("ADMIN")

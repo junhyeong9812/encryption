@@ -24,6 +24,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -39,6 +41,50 @@ public class WebAuthController {
 
     private final AuthService authService;
     private final CookieUtil cookieUtil;
+
+    /**
+     * 인증 상태 확인
+     * SecurityContext에 인증 정보가 있는지 확인합니다.
+     */
+    @GetMapping("/status")
+    @Operation(summary = "인증 상태 확인", description = "현재 인증 상태 정보를 반환합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "상태 확인 성공")
+    })
+    public ResponseEntity<?> checkAuthStatus() {
+        try {
+            Map<String, Object> response = new HashMap<>();
+
+            if (!SecurityUtils.isAuthenticated()) {
+                // 인증되지 않은 사용자
+                response.put("authenticated", false);
+                log.debug("인증되지 않은 사용자의 상태 확인 요청");
+            } else {
+                // 인증된 사용자 정보 추출
+                String email = SecurityUtils.getCurrentUserEmail();
+                Long userId = SecurityUtils.getCurrentUserId();
+                String role = SecurityUtils.isCurrentUserAdmin() ? "ROLE_ADMIN" : "ROLE_USER";
+
+                // 응답 생성
+                response.put("authenticated", true);
+                response.put("userId", userId);
+                response.put("email", email);
+                response.put("role", role);
+
+                log.info("인증된 사용자 상태 확인: userId={}, email={}", userId, email);
+            }
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            // 예외 발생 시 인증되지 않은 상태로 응답
+            log.warn("인증 상태 확인 중 오류 발생: {}", e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("authenticated", false);
+            response.put("error", "인증 상태 확인 중 오류가 발생했습니다.");
+
+            return ResponseEntity.ok(response);
+        }
+    }
 
     /**
      * 웹 회원가입
