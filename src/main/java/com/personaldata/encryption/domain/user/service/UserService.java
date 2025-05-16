@@ -182,16 +182,16 @@ public class UserService {
             }
         }
 
-        // 저장
-        User updatedUser = userRepository.save(user);
+        // save() 호출 제거 - 더티 체킹을 통해 자동으로 업데이트됨
+        // User updatedUser = userRepository.save(user);
 
-        // 검색 인덱스 업데이트
-        userIndexService.indexUser(updatedUser);
+        // 검색 인덱스 업데이트 (user 객체 사용)
+        userIndexService.indexUser(user);
 
         // DTO 반환
         return ssn != null
-                ? UserDto.fromEntity(updatedUser, name, phone, ssn)
-                : UserDto.fromEntity(updatedUser, name, phone);
+                ? UserDto.fromEntity(user, name, phone, ssn)
+                : UserDto.fromEntity(user, name, phone);
     }
 
     /**

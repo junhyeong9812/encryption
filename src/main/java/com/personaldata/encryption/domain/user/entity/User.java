@@ -133,6 +133,13 @@ public class User extends BaseEntity implements UserDetails {
     private Address address;
 
     /**
+     * 낙관적 락을 위한 버전 필드
+     */
+    @Version
+    @Column(name = "version")
+    private Long version;
+
+    /**
      * 생성자
      */
     @Builder
